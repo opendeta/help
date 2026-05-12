@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenDeta Help Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .grad-text {
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .grad-btn { background: linear-gradient(90deg, #10b981, #3b82f6); }
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col items-center p-6 text-slate-800">
+
+    <h1 class="text-4xl font-black grad-text mt-8 mb-2">OpenDeta Help Center</h1>
+    <p class="text-sm font-semibold text-slate-500 mb-10">Which of our apps would you like help with?</p>
+
+    <div class="w-full max-w-lg bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+        
+        <!-- ১. অ্যাপের নাম (সর্বোচ্চ 50 অক্ষর) -->
+        <div class="mb-6">
+            <input type="text" id="appName" maxlength="50"
+                class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-emerald-400 transition-all text-sm" 
+                placeholder="Enter the App Name or Web link…">
+        </div>
+
+        <!-- ২. বিস্তারিত বার্তা (সর্বোচ্চ ২০০০ অক্ষর + কাউন্টার) -->
+        <div class="mb-6 relative">
+            <div class="flex justify-between items-center mb-3">
+                <p class="text-xs font-bold text-slate-600 ml-1 uppercase tracking-tight">Describe the issue or help you need.</p>
+                <span id="charCount" class="text-[10px] font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded-md">0/2000</span>
+            </div>
+            <textarea id="appDetail" maxlength="2000" oninput="updateCharCount()"
+                class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-emerald-400 transition-all text-sm h-40 resize-none overflow-y-auto" 
+                placeholder="Write here..."></textarea>
+        </div>
+
+        <!-- ৩. স্ক্রিনশট আপলোড (সর্বোচ্চ ৫টি + রিমুভ অপশন) -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-3">
+                <p class="text-xs font-bold text-slate-400 ml-1 uppercase tracking-tight italic">Upload Screenshot (Optional)</p>
+                <span id="imgCount" class="text-[10px] font-mono text-slate-400">0/5</span>
+            </div>
+            
+            <div id="uploadArea" class="flex flex-wrap gap-3 items-center">
+                <input type="file" id="fileInp" class="hidden" accept="image/*" multiple onchange="handleFileSelect()">
+                <button id="addBtn" onclick="document.getElementById('fileInp').click()" 
+                    class="w-16 h-16 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-3xl flex items-center justify-center hover:border-emerald-400 hover:text-emerald-400 transition-all">
+                    &#43;
+                </button>
+                <div id="imagePreview" class="flex flex-wrap gap-3"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-center">
+            <button onclick="submitFeedback()" id="sendBtn" 
+                class="grad-btn text-white px-10 py-3 rounded-full font-bold text-sm shadow-lg shadow-emerald-200 hover:scale-95 transition-transform disabled:opacity-50">
+                Send
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = 'https://gdqbohxcszudvvlxjyyl.supabase.co';
+        const SB_KEY = 'sb_publishable_9IRRSJdSmBbtussatWiAyA_ShSe3m7x';
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+
+        let selectedFiles = [];
+
+        // ১. ক্যারেক্টার কাউন্টার আপডেট
+        function updateCharCount() {
+            const detail = document.getElementById('appDetail');
+            document.getElementById('charCount').innerText = `${detail.value.length}/2000`;
+        }
+
+        // ২. ইমেজ হ্যান্ডেলিং (সিলেক্ট, শো এবং রিমুভ)
+        function handleFileSelect() {
+            const inp = document.getElementById('fileInp');
+            const newFiles = Array.from(inp.files);
+            
+            // ৫টার বেশি ছবি ব্লক করা
+            if (selectedFiles.length + newFiles.length > 5) {
+                Toastify({ text: "You can only upload up to 5 images!", style: { background: "#ef4444" } }).showToast();
+                return;
+            }
+
+            selectedFiles = [...selectedFiles, ...newFiles];
+            renderPreviews();
+        }
+
+        function renderPreviews() {
+            const preview = document.getElementById('imagePreview');
+            const addBtn = document.getElementById('addBtn');
+            const imgCounter = document.getElementById('imgCount');
+            
+            preview.innerHTML = "";
+            imgCounter.innerText = `${selectedFiles.length}/5`;
+
+            // ৫টা হয়ে গেলে প্লাস বাটন গায়েব
+            addBtn.style.display = selectedFiles.length >= 5 ? "none" : "flex";
+
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = "relative w-16 h-16";
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="w-full h-full object-cover rounded-xl border border-slate-200">
+                        <button onclick="removeImage(${index})" class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center border-2 border-white shadow-md">×</button>
+                    `;
+                    preview.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeImage(index) {
+            selectedFiles.splice(index, 1);
+            renderPreviews();
+        }
+
+        // ৩. ফাইনাল সাবমিশন
+        async function submitFeedback() {
+            const name = document.getElementById('appName').value.trim();
+            const detail = document.getElementById('appDetail').value.trim();
+            const btn = document.getElementById('sendBtn');
+
+            if (!name || !detail) {
+                Toastify({
+                    text: "Please first enter the app name or web link and what help you would like to receive!",
+                    duration: 4000,
+                    position: "center",
+                    style: { background: "linear-gradient(to right, #ff5f6d, #ffc371)", borderRadius: "15px" }
+                }).showToast();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Sending...";
+
+            let fileUrls = [];
+
+            try {
+                for (let file of selectedFiles) {
+                    const fPath = `uploads/${Date.now()}_${file.name}`;
+                    const { data } = await sb.storage.from('uploads').upload(fPath, file);
+                    if (data) {
+                        const { data: pUrl } = sb.storage.from('uploads').getPublicUrl(fPath);
+                        fileUrls.push(pUrl.publicUrl);
+                    }
+                }
+
+                const { error } = await sb.from('reports').insert([{ 
+                    name: name, 
+                    message: detail, 
+                    file_url: fileUrls.join(', ') 
+                }]);
+
+                if (!error) {
+                    Toastify({
+                        text: "Thank you for sharing your important feedback.",
+                        duration: 3000,
+                        position: "center",
+                        style: { background: "linear-gradient(to right, #00b09b, #96c93d)", borderRadius: "15px" }
+                    }).showToast();
+                    setTimeout(() => { location.reload(); }, 3000);
+                } else { throw error; }
+
+            } catch (err) {
+                alert("Error: " + err.message);
+                btn.disabled = false;
+                btn.innerText = "Send";
+            }
+        }
+    </script>
+</body>
+</html>
