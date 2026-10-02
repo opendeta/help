@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,14 +28,14 @@
 
     <div class="w-full max-w-lg bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
         
-        <!-- ১. অ্যাপের নাম (সর্বোচ্চ 50 অক্ষর) -->
+        <!-- 1. App Name -->
         <div class="mb-6">
             <input type="text" id="appName" maxlength="50"
                 class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-emerald-400 transition-all text-sm" 
                 placeholder="Enter the App Name or Web link…">
         </div>
 
-        <!-- ২. বিস্তারিত বার্তা (সর্বোচ্চ ২০০০ অক্ষর + কাউন্টার) -->
+        <!-- Discription-->
         <div class="mb-6 relative">
             <div class="flex justify-between items-center mb-3">
                 <p class="text-xs font-bold text-slate-600 ml-1 uppercase tracking-tight">Describe the issue or help you need.</p>
@@ -46,8 +46,8 @@
                 placeholder="Write here..."></textarea>
         </div>
 
-        <!-- ৩. স্ক্রিনশট আপলোড (সর্বোচ্চ ৫টি + রিমুভ অপশন) -->
-        <div class="mb-8">
+        <!-- 3. Screenshot Upload-->
+        <div class="mb-6">
             <div class="flex justify-between items-center mb-3">
                 <p class="text-xs font-bold text-slate-400 ml-1 uppercase tracking-tight italic">Upload Screenshot (Optional)</p>
                 <span id="imgCount" class="text-[10px] font-mono text-slate-400">0/5</span>
@@ -63,12 +63,35 @@
             </div>
         </div>
 
+        <!-- 4.Optional E-mail -->
+        <div class="mb-8">
+            <button type="button" onclick="toggleOptionalEmail()" class="text-xs font-bold text-slate-400 hover:text-slate-600 transition flex items-center gap-1 focus:outline-none">
+                <span id="optionalArrow">&gt;</span> Optional
+            </button>
+            <div id="optionalEmailContainer" class="hidden mt-3">
+                <p class="text-xs font-bold text-slate-500 mb-2 ml-1">Enter your E-mail here.</p>
+                <input type="email" id="userEmail" 
+                    class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-2xl outline-none focus:border-emerald-400 transition-all text-sm" 
+                    placeholder="name@example.com">
+            </div>
+        </div>
+
+        <!-- 5. Send button -->
         <div class="flex justify-center">
             <button onclick="submitFeedback()" id="sendBtn" 
                 class="grad-btn text-white px-10 py-3 rounded-full font-bold text-sm shadow-lg shadow-emerald-200 hover:scale-95 transition-transform disabled:opacity-50">
                 Send
             </button>
         </div>
+
+        <!-- Direct email link -->
+        <div class="mt-6 text-center">
+            <p class="text-xs font-semibold text-slate-500">
+                Directly Email us for a faster response. 
+                <a href="mailto:opendeta.support@gmail.com" class="text-blue-600 hover:underline font-bold break-all">opendeta.support@gmail.com</a>
+            </p>
+        </div>
+
     </div>
 
     <script>
@@ -78,18 +101,31 @@
 
         let selectedFiles = [];
 
-        // ১. ক্যারেক্টার কাউন্টার আপডেট
+        
+        function toggleOptionalEmail() {
+            const container = document.getElementById('optionalEmailContainer');
+            const arrow = document.getElementById('optionalArrow');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                arrow.innerHTML = '&vArr;';
+            } else {
+                container.classList.add('hidden');
+                arrow.innerHTML = '&gt;';
+            }
+        }
+
+       
         function updateCharCount() {
             const detail = document.getElementById('appDetail');
             document.getElementById('charCount').innerText = `${detail.value.length}/2000`;
         }
 
-        // ২. ইমেজ হ্যান্ডেলিং (সিলেক্ট, শো এবং রিমুভ)
+     
         function handleFileSelect() {
             const inp = document.getElementById('fileInp');
             const newFiles = Array.from(inp.files);
             
-            // ৫টার বেশি ছবি ব্লক করা
+          
             if (selectedFiles.length + newFiles.length > 5) {
                 Toastify({ text: "You can only upload up to 5 images!", style: { background: "#ef4444" } }).showToast();
                 return;
@@ -107,7 +143,7 @@
             preview.innerHTML = "";
             imgCounter.innerText = `${selectedFiles.length}/5`;
 
-            // ৫টা হয়ে গেলে প্লাস বাটন গায়েব
+          
             addBtn.style.display = selectedFiles.length >= 5 ? "none" : "flex";
 
             selectedFiles.forEach((file, index) => {
@@ -130,10 +166,11 @@
             renderPreviews();
         }
 
-        // ৩. ফাইনাল সাবমিশন
+        
         async function submitFeedback() {
             const name = document.getElementById('appName').value.trim();
-            const detail = document.getElementById('appDetail').value.trim();
+            let detail = document.getElementById('appDetail').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
             const btn = document.getElementById('sendBtn');
 
             if (!name || !detail) {
@@ -144,6 +181,11 @@
                     style: { background: "linear-gradient(to right, #ff5f6d, #ffc371)", borderRadius: "15px" }
                 }).showToast();
                 return;
+            }
+
+            
+            if (email !== "") {
+                detail += `\n\n📧 Sender Email: ${email}`;
             }
 
             btn.disabled = true;
